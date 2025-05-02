@@ -5,13 +5,22 @@ use rand::Rng;
 use std::io::{Write, BufReader, BufRead, ErrorKind};
 use std::fs::File;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 
 fn main() {
-    let mut my_age = 47;
-    let can_vote = if my_age >= 18 {
-        true
-    } else {
-        false
-    };
-    println!("Can Vote : {}", can_vote);
+    let mut heros = HashMap::new();
+    heros.insert("Superman", "Clark Kent");
+    heros.insert("Batman", "Bruce Wayne");
+    heros.insert("The Flash", "Barry Allen");
+
+    for (k, v) in heros.iter() {
+        println!("{} = {}", k, v);
+    }
+    if heros.contains_key(&"Superman") {
+        let the_batman = heros.get(&"Superman");
+        match the_batman {
+            Some(x) => println!("The Batman is a hero"),
+            None => println!("The Batman is not a hero"),
+        }
+    }
 }
