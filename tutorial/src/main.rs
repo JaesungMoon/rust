@@ -8,19 +8,16 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 
 fn main() {
-    let mut heros = HashMap::new();
-    heros.insert("Superman", "Clark Kent");
-    heros.insert("Batman", "Bruce Wayne");
-    heros.insert("The Flash", "Barry Allen");
+    struct Customer {
+        name: String,
+        address: String,
+        balance: f32,
+    }
 
-    for (k, v) in heros.iter() {
-        println!("{} = {}", k, v);
-    }
-    if heros.contains_key(&"Superman") {
-        let the_batman = heros.get(&"Superman");
-        match the_batman {
-            Some(x) => println!("The Batman is a hero"),
-            None => println!("The Batman is not a hero"),
-        }
-    }
+    let mut bob = Customer{
+        name: String::from("Bob Smith"),
+        address: String::from("555 Main St"),
+        balance: 234.40
+    };
+    bob.address = String::from("123 Elm St");
 }
