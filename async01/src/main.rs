@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use tokio::sync::{Mutex, mpsc};
 use tokio::time::{sleep, Duration};
 
@@ -13,20 +13,20 @@ impl Logger {
 
         tokio::spawn(async move {
             let buffer = Arc::new(Mutex::new(Vec::new()));
-            let mut timer_running = false;
+            let is_timer_running = Arc::new(AtomicBool::new(false));
 
             while let Some(log) = rx.recv().await {
-                let buffer_clone = buffer.clone();
-
                 {
-                    // バッファにログ追加
-                    let mut buf = buffer_clone.lock().await;
+                    let mut buf = buffer.lock().await;
                     buf.push(log);
                 }
 
-                if !timer_running {
-                    timer_running = true;
-                    let buffer_clone = buffer.clone();
+                // タイマーが動いてなければ起動
+                if !is_timer_running.load(Ordering::Relaxed) {
+                    is_timer_running.store(true, Ordering::Relaxed);
+
+                    let buffer_clone = Arc::clone(&buffer);
+                    let is_timer_running_clone = Arc::clone(&is_timer_running);
 
                     tokio::spawn(async move {
                         sleep(Duration::from_secs(1)).await;
@@ -34,6 +34,9 @@ impl Logger {
                         let mut buf = buffer_clone.lock().await;
                         println!("Flushed logs: {:?}", *buf);
                         buf.clear();
+
+                        // タイマー終了
+                        is_timer_running_clone.store(false, Ordering::Relaxed);
                     });
                 }
             }
