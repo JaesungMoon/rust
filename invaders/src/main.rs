@@ -13,8 +13,10 @@ fn main() -> Result <(), Box<dyn Error>> {
     audio.add("pew", "./pew.wav");
     audio.add("startup", "./startup.wav");
     audio.add("win", "./win.wav");
+    audio.add("start", "./start.mp3");
     
-    audio.play("startup");
+    audio.play("start");
+    // audio.play("startup"); // to small sound
     
     // Terminal
     let mut stdout = std::io::stdout();
