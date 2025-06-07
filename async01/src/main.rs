@@ -59,4 +59,13 @@ async fn main() {
 
     logger.send_log("From Rust!");
     tokio::time::sleep(Duration::from_secs(2)).await;
+
+    logger.send_log("Hello1");
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    logger.send_log("World1");
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    logger.send_log("From Rust!1");
+    tokio::time::sleep(Duration::from_secs(2)).await;
 }
