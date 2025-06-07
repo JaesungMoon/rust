@@ -11,33 +11,30 @@ impl Logger {
     fn new() -> Self {
         let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
-        // バッファを保持するためのスレッド内タスク
         tokio::spawn(async move {
-            let mut buffer = Vec::new();
-            let mut timer = None;
+            let buffer = Arc::new(Mutex::new(Vec::new()));
+            let mut timer_running = false;
 
             while let Some(log) = rx.recv().await {
-                buffer.push(log);
+                let buffer_clone = buffer.clone();
 
-                // タイマーが未起動なら起動
-                if timer.is_none() {
-                    timer = Some(tokio::spawn({
-                        let mut buf = std::mem::take(&mut buffer);
-                        async move {
-                            sleep(Duration::from_secs(1)).await;
-                            println!("Flushed logs: {:?}", buf);
-                        }
-                    }));
-                } else {
-                    // タイマー起動済み：バッファを復元
-                    buffer.append(&mut tokio::task::spawn_blocking(move || {
-                        buf
-                    }).await.unwrap());
+                {
+                    // バッファにログ追加
+                    let mut buf = buffer_clone.lock().await;
+                    buf.push(log);
                 }
 
-                // タイマーが終了したらリセット
-                if let Some(handle) = timer.take() {
-                    let _ = handle.await;
+                if !timer_running {
+                    timer_running = true;
+                    let buffer_clone = buffer.clone();
+
+                    tokio::spawn(async move {
+                        sleep(Duration::from_secs(1)).await;
+
+                        let mut buf = buffer_clone.lock().await;
+                        println!("Flushed logs: {:?}", *buf);
+                        buf.clear();
+                    });
                 }
             }
         });
@@ -45,8 +42,8 @@ impl Logger {
         Logger { sender: tx }
     }
 
-    fn send_log(&self, msg: String) {
-        let _ = self.sender.send(msg);
+    fn send_log(&self, msg: impl Into<String>) {
+        let _ = self.sender.send(msg.into());
     }
 }
 
@@ -54,12 +51,12 @@ impl Logger {
 async fn main() {
     let logger = Logger::new();
 
-    logger.send_log("Hello".into());
+    logger.send_log("Hello");
     tokio::time::sleep(Duration::from_millis(300)).await;
 
-    logger.send_log("World".into());
+    logger.send_log("World");
     tokio::time::sleep(Duration::from_millis(300)).await;
 
-    logger.send_log("From Rust!".into());
+    logger.send_log("From Rust!");
     tokio::time::sleep(Duration::from_secs(2)).await;
 }
